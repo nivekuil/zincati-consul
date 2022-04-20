@@ -1,0 +1,12 @@
+A tiny zincati helper that provides a fleetlock backend for consul, and also serves as a HTTP metrics proxy.
+
+This is a babashka script with no external dependencies, so it can just be run from source with =bb=.
+
+Configuration is through environment variables:
+
+| GROUP_DOWN_MAP                 | json map: group name -> max hosts down (by default, at most 1 host down per group) |
+| BIND_IP                        | ip to bind to                                                                      |
+| BIND_PORT                      | port to bind to                                                                    |
+
+When running in a container you should set an =init= process to handle signals, and you need to mount =/run/zincati/public/= and convince SELinux to allow access to promsock.  Currently you need to use my babashka image (docker.io/nivekuil/babashka) because the main one doesn't have =socat= for metrics.
+
