@@ -5,6 +5,8 @@
 (def consul-url (or (System/getenv "CONSUL_HTTP_ADDR")
                     "http://localhost:8500"))
 (def bind-ip (or (System/getenv "BIND_IP") "localhost"))
+(def metrics-ip (System/getenv "METRICS_IP"))
+(def metrics-port (or (System/getenv "METRICS_PORT") 9090))
 (def group->maxdown (or (some-> (System/getenv "GROUP_DOWN_MAP")
                                 json/parse-string)
                         {"default" 1}))
@@ -38,13 +40,13 @@
            false
            (throw e)))))
 
+(defn metrics [_]
+  {:body   (:out (shell/sh "socat" "-" "UNIX-CONNECT:/run/zincati/public/metrics.promsock"))
+   :status 200})
+
 (defn app [{:keys [request-method uri body]}]
   (let [{:strs [group id]} (some-> body slurp json/parse-string (get "client_params"))]
     (case [request-method uri]
-      [:get "/metrics"]
-      {:body   (:out (shell/sh "socat" "-" "UNIX-CONNECT:/run/zincati/public/metrics.promsock"))
-       :status 200}
-
       [:post "/v1/pre-reboot"]
       (if (acquired? group id)
         {:body   "already acquired"
@@ -71,4 +73,5 @@
          :status 200}))))
 
 (srv/run-server app {:ip bind-ip :port bind-port})
+(when metrics-ip (srv/run-server metrics {:ip metrics-ip :port metrics-port}))
 @(promise)
