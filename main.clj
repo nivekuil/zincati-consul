@@ -8,7 +8,7 @@
 (def group->maxdown (or (some-> (System/getenv "GROUP_DOWN_MAP")
                                 json/parse-string)
                         {"default" 1}))
-(def bind-port (or (some-> (System/getenv "BIND_PORT") parse-long) 8080))
+(def bind-port (or (some-> (System/getenv "BIND_PORT") parse-long) 15535))
 
 (defn http-get [path]
   (-> (curl/get (format "%s/v1/%s" consul-url path))
