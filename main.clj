@@ -4,7 +4,7 @@
 
 (def consul-url (or (System/getenv "CONSUL_HTTP_ADDR")
                     "http://localhost:8500"))
-(def bind-ip (or (System/getenv "BIND_IP") "::"))
+(def bind-ip (or (System/getenv "BIND_IP") "localhost"))
 (def group->maxdown (or (some-> (System/getenv "GROUP_DOWN_MAP")
                                 json/parse-string)
                         {"default" 1}))
