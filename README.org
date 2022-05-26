@@ -5,7 +5,7 @@ This is a babashka script with no external dependencies, so it can just be run f
 Configuration is through environment variables:
 
 | GROUP_DOWN_MAP | json map: group name -> max hosts down (by default, at most 1 host down per group) |
-| BIND_IP        | ip to bind to (default: localhost)                                                 |
+| BIND_IP        | ip to bind to (default: 127.0.0.1)                                     |
 | BIND_PORT      | port to bind to (default: 15535)                                                   |
 | METRICS_IP     | ip to bind the metrics proxy to (default: unset and disabled)                      |
 | METRICS_PORT   | port to bind the metrics proxy to (default: 9090)                                  |

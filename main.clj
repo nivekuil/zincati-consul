@@ -4,7 +4,7 @@
 
 (def consul-url (or (System/getenv "CONSUL_HTTP_ADDR")
                     "http://localhost:8500"))
-(def bind-ip (or (System/getenv "BIND_IP") "localhost"))
+(def bind-ip (or (System/getenv "BIND_IP") "127.0.0.1"))
 (def metrics-ip (System/getenv "METRICS_IP"))
 (def metrics-port (or (System/getenv "METRICS_PORT") 9090))
 (def group->maxdown (or (some-> (System/getenv "GROUP_DOWN_MAP")
@@ -73,5 +73,8 @@
          :status 200}))))
 
 (srv/run-server app {:ip bind-ip :port bind-port})
-(when metrics-ip (srv/run-server metrics {:ip metrics-ip :port metrics-port}))
+(println "Zincati listening on" bind-ip "port" bind-port)
+(when metrics-ip
+  (srv/run-server metrics {:ip metrics-ip :port metrics-port})
+  (println "Metrics proxy listening on" metrics-ip "port" metrics-port))
 @(promise)
