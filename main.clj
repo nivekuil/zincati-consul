@@ -4,6 +4,9 @@
 
 (def consul-url (or (System/getenv "CONSUL_HTTP_ADDR")
                     "http://localhost:8500"))
+(def socket? (str/starts-with? consul-url "unix:"))
+(def extra-curl-args (when socket?
+                       {:raw-args ["-g" "--unix-socket" (str/replace-first consul-url "unix://" "")]}))
 (def bind-ip (or (System/getenv "BIND_IP") "127.0.0.1"))
 (def metrics-ip (System/getenv "METRICS_IP"))
 (def metrics-port (or (System/getenv "METRICS_PORT") 9090))
@@ -13,16 +16,19 @@
 (def bind-port (or (some-> (System/getenv "BIND_PORT") parse-long) 15535))
 
 (defn http-get [path]
-  (-> (curl/get (format "%s/v1/%s" consul-url path))
+  (-> (curl/get (format "%s/v1/%s" (if socket? "http://d" consul-url) path)
+                extra-curl-args)
       :body json/parse-string))
 
 (defn http-put [path data]
-  (-> (curl/put (format "%s/v1/%s" consul-url path)
-                {:body (json/generate-string data)})
+  (-> (curl/put (format "%s/v1/%s" (if socket? "http://d" consul-url) path)
+                (merge {:body (json/generate-string data)}
+                       extra-curl-args))
       :body json/parse-string))
 
 (defn http-delete [path]
-  (-> (curl/delete (format "%s/v1/%s" consul-url path))
+  (-> (curl/delete (format "%s/v1/%s" (if socket? "http://d" consul-url) path)
+                   extra-curl-args)
       :body json/parse-string))
 
 (defn all-acquired [group]
@@ -71,7 +77,6 @@
         (http-delete (format "kv/fleetlock/%s/%s" group id))
         {:body   ""
          :status 200}))))
-
 (srv/run-server app {:ip bind-ip :port bind-port})
 (println "Zincati listening on" bind-ip "port" bind-port)
 (when metrics-ip
