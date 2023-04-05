@@ -1,6 +1,11 @@
 #!/usr/bin/env bb
 
 (require '[org.httpkit.server :as srv])
+(require '[clojure.java.io :as io])
+(import [java.net UnixDomainSocketAddress StandardProtocolFamily]
+        [java.nio.channels SocketChannel]
+        [java.nio.charset StandardCharsets]
+        [java.nio ByteBuffer])
 
 (def consul-url (or (System/getenv "CONSUL_HTTP_ADDR")
                     "http://localhost:8500"))
@@ -47,8 +52,14 @@
            (throw e)))))
 
 (defn metrics [_]
-  {:body   (:out (shell/sh "socat" "-" "UNIX-CONNECT:/run/zincati/public/metrics.promsock"))
-   :status 200})
+  (let [socket-address (UnixDomainSocketAddress/of "/run/zincati/public/metrics.promsock")
+        sc             (SocketChannel/open  socket-address)
+        bb             (ByteBuffer/allocate 10024)]
+    (.read sc bb)
+    (.flip bb)
+    {:body    (.toString (.decode StandardCharsets/UTF_8 bb))
+     :headers {"content-type" "text/plain; version=0.0.4"}
+     :status  200}))
 
 (defn app [{:keys [request-method uri body]}]
   (let [{:strs [group id]} (some-> body slurp json/parse-string (get "client_params"))]
